@@ -4,29 +4,63 @@ import convertDataToBitString from './ConvertDataToBitString';
 import {saveAs} from 'file-saver';
 import decompress from './Decompressor';
 
-const Upload = () => (
-  <div className="upload">
-    <h2>Upload the file to Compress</h2>
-    <form>
-      <label for="myfile">Select your file: </label>
-      <input type="file" id="compress" name="myfile"/>
-      <button onClick={compressFile}>Submit</button>
-    </form>
-    <h2>Upload the file to Decompress</h2>
-    <form>
-      <label for="myfile">Select your file: </label>
-      <input type="file" id="decompress" name="myfile"/>
-      <button onClick={decompessFile}>Submit</button>
-    </form>
-  </div>
-);
+const Upload = ({ setProcessing, setType }) => {
+  const addOver = (e) => {
+    e.preventDefault();
+    document.getElementById('container').classList.add('input-file-container-over')
+  }
+  const removeOver = (e) => {
+    e.preventDefault();
+    document.getElementById('container').classList.remove('input-file-container-over')
+  }
+  const setFile = (e) => {
+    e.preventDefault();
+    document.getElementById('container').classList.remove('input-file-container-over')
+    document.getElementById('file').files = e.dataTransfer.files;
+    console.log(e.dataTransfer.files);
+  }
+  return (
+    <div>
+      <div className="container">
+        <div className="upload">
+          <div 
+            id='container' 
+            className="input-file-container" 
+            onDragOver={addOver}
+            onDragEnd={removeOver}
+            onDragLeave={removeOver}
+            onDrop={setFile}
+          >
+            <div className='container-text'>
+              <div className="input-file-container-text">Drop or Select to upload the file</div>
+              <input type="file" id="file"/>
+              <button className="input-clone" onClick={() => {
+                document.getElementById('file').click();
+              }}>Select File</button>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div className='btn-container'>
+        <button className='btn' onClick={(event) => compressFile(event, setProcessing, setType)}>Compress</button>
+        <button className='btn' onClick={(event) => decompressFile(event, setProcessing, setType)}>Decompress</button>
+      </div>
+    </div>
+  );
+}
 
-const esc = "/";
+const esc = "/", delay = 50;
+const sleep = async () => {
+  return new Promise(resolve => setTimeout(resolve, delay));
+}
 
 // Once the submit button is clicked we will start processing the file here
-const compressFile = (event) => {
+const compressFile = (event, setProcessing, setType) => {
+  setProcessing(0);
+  setType("Compressing");
   // here we are storing the data of the file provided by the user into temp variable
-  let temp = document.getElementById('compress').files[0];
+  let temp = document.getElementById('file').files[0];
+  console.log(temp);
   
   // to check whether the file is provided to compress or not
   if(temp === undefined) {
@@ -35,23 +69,45 @@ const compressFile = (event) => {
   else {
     // Using FileReader to read the file as text
     const reader = new FileReader();
-    reader.addEventListener('load', (event) => {
+    reader.addEventListener('load', async (event) => {
       // storing the file data into the result variable
       const result = event.target.result;
-      
+      for(let i=0; i<8; i++) {
+        setProcessing(prev => prev + 1);
+        await sleep();
+      }
+
       // getting the map of characters to the bit string with which to replace them
       let charBitMap = getBitStrings(result);
+      for(let i=0; i<7; i++) {
+        setProcessing(prev => prev + 1);
+        await sleep();
+      }
 
       // getting the actual data after replacing the characters with their bit strings 
       // and converting them to their ascii values by using 7 bits from them at each time
       let bitData = convertDataToBitString(result, charBitMap);
+      for(let i=0; i<30; i++) {
+        setProcessing(prev => prev + 1);
+        await sleep();
+      }
 
       // storing the map to use it for decompression
       bitData += esc + changeMapToString(charBitMap);
+      for(let i=0; i<40; i++) {
+        setProcessing(prev => prev + 1);
+        await sleep();
+      }
 
       // using Blob to create a file and provide it to the user to share 
       let blob = new Blob([bitData], {type: "text/plain;charset=utf-8" });
+      for(let i=0; i<15; i++) {
+        setProcessing(prev => prev + 1);
+        await sleep();
+      }
       saveAs(blob, getFileName(temp.name));
+      setProcessing(-1);
+      setType("");
     });
     reader.readAsText(temp);
   } 
@@ -59,9 +115,11 @@ const compressFile = (event) => {
   event.preventDefault();
 }
 
-const decompessFile = (event) => {
+const decompressFile = (event, setProcessing, setType) => {
+  setProcessing(0);
+  setType("Decompressing");
   // here we are storing the data of the file provided by the user into temp variable
-  let temp = document.getElementById('decompress').files[0];
+  let temp = document.getElementById('file').files[0];
   
   // to check whether the file is provided to decompress or not
   if(temp === undefined) {
@@ -70,24 +128,36 @@ const decompessFile = (event) => {
   else {
     // Using FileReader to read the file as text
     const reader = new FileReader();
-    reader.addEventListener('load', (event) => {
+    reader.addEventListener('load', async (event) => {
       // storing the file data into the result variable
       const result = event.target.result;
-      
+      for(let i=0; i<25; i++) {
+        setProcessing(prev => prev + 1);
+        await sleep();
+      }
       // splitting the result to get the hashmap back
       let arr = result.split(esc);
-
       // creating the compressed data with the / characters
       let bitData = "";
-      for(let i=0; i<arr.length-1; i++)
+      for(let i=0; i<arr.length-1; i++) {
         bitData += arr[i] + (i!==arr.length-2?esc:"");
-
+      }
+      for(let i=0; i<30; i++) {
+        setProcessing(prev => prev + 1);
+        await sleep();
+      }
       // decompressing the data
-      let decompressedData = decompress(bitData, JSON.parse(arr[arr.length-1]));
-      
+      let decompressedData = await decompress(bitData, JSON.parse(arr[arr.length-1]), setProcessing);
+    
       // using Blob to create a file and provide it to the user to share 
       let blob = new Blob([decompressedData], {type: "text/plain;charset=utf-8" });
+      for(let i=0; i<15; i++) {
+        setProcessing(prev => prev + 1);
+        await sleep();
+      }
       saveAs(blob, getFileName(temp.name, "_de"));
+      setProcessing(-1);
+      setType("");
     });
     reader.readAsText(temp);
   } 

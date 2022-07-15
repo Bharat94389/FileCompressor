@@ -1,12 +1,14 @@
 import Header from './Components/Header/Header';
-import './App.css';
-import Upload from './Components/Upload/Upload';
-  
-const App = () => (
-  <div className="App">
-    <Header/>
-    <Upload/>
-  </div>
-);
+import Home from './Components/Home/Home';
+import './style.css';
+
+const App = () => {
+  return (
+    <div>
+      <Header/>
+      <Home/>
+    </div>
+  );
+}
 
 export default App;
