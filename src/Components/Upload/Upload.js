@@ -26,7 +26,7 @@ const Upload = ({ setProcessing, setType }) => {
         <div className="upload">
           <div id='container' className="input-file-container" onDragOver={addOver} onDragEnd={removeOver} onDragLeave={removeOver} onDrop={setFile}>
             <div className='container-text'>
-              <div className="input-file-container-text">Drop or Select to upload the file</div>
+              <div className="input-file-container-text">Drop or Select to upload text file</div>
               <input type="file" id="file" onChange={(e) => setFileName(e.target.files[0].name)} />
               <button className="input-clone" onClick={() => document.getElementById('file').click()}>
                 Select File
