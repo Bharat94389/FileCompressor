@@ -1,10 +1,11 @@
-import React from 'react';
+import React, { useState } from 'react';
 import getBitStrings, { changeMapToString } from './Compressor';
 import convertDataToBitString from './ConvertDataToBitString';
-import {saveAs} from 'file-saver';
+import { saveAs } from 'file-saver';
 import decompress from './Decompressor';
 
 const Upload = ({ setProcessing, setType }) => {
+  const [fileName, setFileName] = useState("");
   const addOver = (e) => {
     e.preventDefault();
     document.getElementById('container').classList.add('input-file-container-over')
@@ -17,33 +18,27 @@ const Upload = ({ setProcessing, setType }) => {
     e.preventDefault();
     document.getElementById('container').classList.remove('input-file-container-over')
     document.getElementById('file').files = e.dataTransfer.files;
-    console.log(e.dataTransfer.files);
+    setFileName(e.dataTransfer.files[0].name);
   }
   return (
     <div>
       <div className="container">
         <div className="upload">
-          <div 
-            id='container' 
-            className="input-file-container" 
-            onDragOver={addOver}
-            onDragEnd={removeOver}
-            onDragLeave={removeOver}
-            onDrop={setFile}
-          >
+          <div id='container' className="input-file-container" onDragOver={addOver} onDragEnd={removeOver} onDragLeave={removeOver} onDrop={setFile}>
             <div className='container-text'>
               <div className="input-file-container-text">Drop or Select to upload the file</div>
-              <input type="file" id="file"/>
-              <button className="input-clone" onClick={() => {
-                document.getElementById('file').click();
-              }}>Select File</button>
+              <input type="file" id="file" onChange={(e) => setFileName(e.target.files[0].name)} />
+              <button className="input-clone" onClick={() => document.getElementById('file').click()}>
+                Select File
+              </button>
+              <div className='filename'>{fileName}</div>
             </div>
           </div>
         </div>
       </div>
       <div className='btn-container'>
-        <button className='btn' onClick={(event) => compressFile(event, setProcessing, setType)}>Compress</button>
-        <button className='btn' onClick={(event) => decompressFile(event, setProcessing, setType)}>Decompress</button>
+        <button className='btn' onClick={(event) => compressFile(event, setProcessing, setType, setFileName)}>Compress</button>
+        <button className='btn' onClick={(event) => decompressFile(event, setProcessing, setType, setFileName)}>Decompress</button>
       </div>
     </div>
   );
@@ -55,12 +50,11 @@ const sleep = async () => {
 }
 
 // Once the submit button is clicked we will start processing the file here
-const compressFile = (event, setProcessing, setType) => {
+const compressFile = (event, setProcessing, setType, setFileName) => {
   setProcessing(0);
   setType("Compressing");
   // here we are storing the data of the file provided by the user into temp variable
   let temp = document.getElementById('file').files[0];
-  console.log(temp);
   
   // to check whether the file is provided to compress or not
   if(temp === undefined) {
@@ -108,6 +102,7 @@ const compressFile = (event, setProcessing, setType) => {
       saveAs(blob, getFileName(temp.name));
       setProcessing(-1);
       setType("");
+      setFileName("");
     });
     reader.readAsText(temp);
   } 
@@ -115,7 +110,7 @@ const compressFile = (event, setProcessing, setType) => {
   event.preventDefault();
 }
 
-const decompressFile = (event, setProcessing, setType) => {
+const decompressFile = (event, setProcessing, setType, setFileName) => {
   setProcessing(0);
   setType("Decompressing");
   // here we are storing the data of the file provided by the user into temp variable
@@ -158,6 +153,7 @@ const decompressFile = (event, setProcessing, setType) => {
       saveAs(blob, getFileName(temp.name, "_de"));
       setProcessing(-1);
       setType("");
+      setFileName("");
     });
     reader.readAsText(temp);
   } 
